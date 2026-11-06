@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base de datos de teclados</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Georgia, "Times New Roman", serif; background: #faf7f2; color: #2b2b2b; line-height: 1.6; }
+    header { background: #2c2a28; color: #f5efe6; text-align: center; padding: 50px 20px; }
+    .autor { font-family: Arial, sans-serif; font-size: 15px; letter-spacing: 3px; text-transform: uppercase; color: #e0b567; margin-bottom: 14px; }
+    header h1 { font-size: 36px; margin: 0 0 10px; letter-spacing: 1px; }
+    header p { max-width: 700px; margin: 0 auto; color: #d9cfc0; font-size: 17px; }
+    main { max-width: 1050px; margin: 0 auto; padding: 30px 20px; }
+    .filtros { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; font-family: Arial, sans-serif; }
+    .filtros button { padding: 7px 14px; border: 1px solid #b8863b; background: #fff; color: #8a5e1c; border-radius: 20px; cursor: pointer; font-size: 14px; }
+    .filtros button.activo { background: #b8863b; color: #fff; }
+    .tabla-wrap { overflow-x: auto; background: #fff; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+    table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px; }
+    th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #eadfcb; vertical-align: top; }
+    th { background: #f3ead9; border-bottom: 3px solid #b8863b; color: #5a3e10; }
+    tr:hover td { background: #fcf8ef; }
+    td a { color: #8a5e1c; font-weight: bold; text-decoration: none; }
+    td a:hover { text-decoration: underline; }
+    .etiqueta { display: inline-block; background: #f3ead9; color: #8a5e1c; border-radius: 10px; padding: 2px 9px; font-size: 12px; font-weight: bold; }
+    .stock-bajo { color: #b3261e; font-weight: bold; }
+    .nota { background: #f3ead9; border-radius: 6px; padding: 14px 18px; margin: 20px 0 0; font-size: 15px; }
+    footer { background: #2c2a28; color: #bdb2a2; text-align: center; padding: 25px 15px; font-family: Arial, sans-serif; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="autor">Josue Guzman</div>
+    <h1>Base de datos de teclados</h1>
+    <p>Los teclados que hay en inventario y la parte de la historia de los teclados con la que se relaciona cada uno.</p>
+  </header>
+
+  <main>
+    <div class="filtros" id="filtros"></div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Marca</th><th>Modelo</th><th>Equipo</th><th>Conexión</th>
+            <th>Tecnología</th><th>Características</th><th>Relación con la historia</th><th>Stock</th>
+          </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+      </table>
+    </div>
+
+    <div class="nota" id="resumen"></div>
+  </main>
+
+  <footer>
+    Base de datos de teclados &middot; Josue Guzman &middot; Cada modelo enlaza con la sección de la página de historia donde aparece su tecnología.
+  </footer>
+
+  <script>
+    // [marca, modelo, equipo, conexión, tecnología, características, [texto del enlace, sección de la historia], stock]
+    const H = "historia_de_los_teclados.html";
+    const teclados = [
+      ["Logitech", "K120", "Computadora", "USB", "Membrana", "Con cable, resistente a salpicaduras",
+        ["Membrana y USB (años 90)", "computadoras"], 40],
+      ["Logitech", "MK270 Combo", "Computadora", "Inalámbrico", "Membrana", "Incluye mouse, receptor USB",
+        ["Teclados inalámbricos (2000s)", "actualidad"], 25],
+      ["Logitech", "Keys-To-Go 2", "Laptop", "Bluetooth", "Tijera / delgado", "Delgado y portátil, recargable",
+        ["Bluetooth y teclas de tijera (2000s)", "actualidad"], 10],
+      ["Redragon", "Kumara K552", "Computadora", "USB", "Mecánico", "Compacto, con luz LED",
+        ["Switches mecánicos tipo Cherry MX (1980s)", "computadoras"], 18],
+      ["Razer", "BlackWidow V3", "Computadora", "USB", "Mecánico", "Mecánico gamer, luz RGB",
+        ["El regreso de los mecánicos y el gaming (2010s)", "actualidad"], 6],
+      ["HP", "Repuesto Pavilion 15", "Laptop", "Interno", "Tijera / delgado", "Español, con luz, color negro",
+        ["Teclas de tijera en laptops (años 90) y la Ñ", "curiosidades"], 12],
+      ["Dell", "Repuesto Inspiron 3520", "Laptop", "Interno", "Tijera / delgado", "Español, sin luz, color negro",
+        ["Teclas de tijera en laptops (años 90) y la Ñ", "curiosidades"], 9],
+      ["Lenovo", "Repuesto IdeaPad 3", "Laptop", "Interno", "Tijera / delgado", "Español, color gris",
+        ["Teclas de tijera en laptops (años 90) y la Ñ", "curiosidades"], 14]
+    ];
+
+    const filtrosDiv = document.getElementById("filtros");
+    const cuerpo = document.getElementById("tabla");
+    const tecnologias = ["Todos", ...new Set(teclados.map(t => t[4]))];
+    let actual = "Todos";
+
+    function pintar() {
+      const lista = teclados.filter(t => actual === "Todos" || t[4] === actual);
+      cuerpo.innerHTML = lista.map(t => `
+        <tr>
+          <td>${t[0]}</td>
+          <td><b>${t[1]}</b></td>
+          <td>${t[2]}</td>
+          <td>${t[3]}</td>
+          <td><span class="etiqueta">${t[4]}</span></td>
+          <td>${t[5]}</td>
+          <td><a href="${H}#${t[6][1]}">${t[6][0]}</a></td>
+          <td class="${t[7] <= 10 ? "stock-bajo" : ""}">${t[7]}</td>
+        </tr>`).join("");
+      const total = lista.reduce((suma, t) => suma + t[7], 0);
+      document.getElementById("resumen").textContent =
+        `Mostrando ${lista.length} modelos · ${total} teclados en stock. Los números en rojo indican poco stock (10 o menos).`;
+    }
+
+    function pintarFiltros() {
+      filtrosDiv.innerHTML = "";
+      tecnologias.forEach(tec => {
+        const b = document.createElement("button");
+        b.textContent = tec;
+        b.className = tec === actual ? "activo" : "";
+        b.onclick = () => { actual = tec; pintarFiltros(); pintar(); };
+        filtrosDiv.appendChild(b);
+      });
+    }
+
+    pintarFiltros();
+    pintar();
+  </script>
+</body>
+</html>
